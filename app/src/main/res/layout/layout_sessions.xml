@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:app="http://schemas.android.com/apk/res-auto"
+  xmlns:tools="http://schemas.android.com/tools"
+  android:layout_width="match_parent"
+  android:layout_height="wrap_content"
+  android:layout_margin="10dp"
+  android:orientation="vertical">
+
+  <TextView
+    android:id="@+id/tvSessionName"
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"
+    android:textSize="25sp"
+    android:textStyle="bold"
+    app:layout_constraintEnd_toEndOf="@id/barDelete"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintTop_toTopOf="parent"
+    tools:text="Session Name" />
+
+  <TextView
+    android:id="@+id/tvSessionId"
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"
+    android:textSize="22sp"
+    android:textStyle="italic"
+    app:layout_constraintEnd_toEndOf="@id/barDelete"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintTop_toBottomOf="@id/tvSessionName"
+    tools:text="abcd" />
+
+  <TextView
+    android:id="@+id/tvSessionMetadata"
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"
+    android:textSize="22sp"
+    android:textStyle="italic"
+    app:layout_constraintEnd_toEndOf="@id/barDelete"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintTop_toBottomOf="@id/tvSessionId"
+    tools:text="20-2-21 7.00 pm" />
+
+  <Button
+    android:id="@+id/btnDelete"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="@string/delete"
+    app:layout_constraintBottom_toBottomOf="parent"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintTop_toTopOf="parent" />
+
+  <androidx.constraintlayout.widget.Barrier
+    android:id="@+id/barDelete"
+    android:layout_width="wrap_content"
+    android:layout_height="match_parent"
+    app:barrierDirection="start"
+    app:constraint_referenced_ids="btnDelete" />
+</androidx.constraintlayout.widget.ConstraintLayout>

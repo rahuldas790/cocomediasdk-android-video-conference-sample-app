@@ -1,0 +1,20 @@
+<resources>
+  <string name="app_name">Coco Sessions</string>
+  <string name="end_call_for_all">End call for all</string>
+  <string name="user_name">User Name</string>
+  <string name="continue_str">Continue</string>
+  <string name="base_url">Base Url</string>
+
+  <string name="invite">Invite</string>
+
+  <string name="create_session">Create Session</string>
+  <string name="active_sessions">Active Sessions</string>
+
+  <string name="delete">Delete</string>
+
+  <string name="session_name">Session Name</string>
+  <string name="session_id">Session Id</string>
+  <string name="type_your_message">Type Your Message</string>
+  <string name="greater">></string>
+  <string name="double_greater">>></string>
+</resources>

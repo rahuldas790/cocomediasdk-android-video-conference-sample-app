@@ -1,0 +1,61 @@
+plugins {
+  id 'com.android.application'
+}
+
+android {
+  compileSdk 31
+
+  defaultConfig {
+    applicationId "buzz.getcoco.media.sample"
+    minSdk 23
+    targetSdk 31
+    versionCode 1
+    versionName "1.0"
+
+    testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+  }
+
+  buildFeatures {
+    viewBinding true
+  }
+
+  buildTypes {
+    release {
+      minifyEnabled false
+      proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+    }
+  }
+
+  compileOptions {
+    coreLibraryDesugaringEnabled true
+
+    sourceCompatibility JavaVersion.VERSION_1_8
+    targetCompatibility JavaVersion.VERSION_1_8
+  }
+}
+
+dependencies {
+  implementation 'buzz.getcoco:cocomediasdk-java:0.0.3-lite-develop'
+  implementation 'buzz.getcoco:cocomediasdk-android:0.0.2-debug@aar'
+  implementation 'com.github.krishna-elear:ExoPlayer:01d1e7fc09'
+
+  implementation 'androidx.camera:camera-view:1.0.0-alpha31'
+
+  coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.1.5'
+
+  implementation 'androidx.appcompat:appcompat:1.4.0'
+  implementation 'com.google.android.material:material:1.4.0'
+  implementation 'androidx.constraintlayout:constraintlayout:2.1.2'
+
+  implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
+  implementation 'com.squareup.okhttp3:okhttp:5.0.0-alpha.2'
+
+  testImplementation 'junit:junit:4.13.2'
+  testImplementation 'org.mockito:mockito-core:3.12.4'
+
+  androidTestImplementation 'androidx.test:rules:1.4.1-alpha03'
+  androidTestImplementation 'org.mockito:mockito-android:3.12.4'
+
+  androidTestImplementation 'androidx.test.ext:junit:1.1.4-alpha03'
+  androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.0-alpha03'
+}

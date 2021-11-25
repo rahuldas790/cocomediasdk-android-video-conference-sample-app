@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:app="http://schemas.android.com/apk/res-auto"
+  xmlns:tools="http://schemas.android.com/tools"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent"
+  android:keepScreenOn="true"
+  tools:context=".CallerActivity">
+
+  <buzz.getcoco.media.ui.NodePlayerView
+    android:id="@+id/pvParticipantA"
+    android:layout_width="0dp"
+    android:layout_height="0dp"
+    app:enable_debug_text_view="true"
+    app:layout_constraintBottom_toBottomOf="@id/glH45"
+    app:layout_constraintEnd_toEndOf="@id/glV50"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintTop_toTopOf="parent" />
+
+  <buzz.getcoco.media.ui.NodePlayerView
+    android:id="@+id/pvParticipantB"
+    android:layout_width="0dp"
+    android:layout_height="0dp"
+    app:enable_debug_text_view="true"
+    app:layout_constraintBottom_toBottomOf="@id/glH45"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintStart_toStartOf="@id/glV50"
+    app:layout_constraintTop_toTopOf="parent" />
+
+  <buzz.getcoco.media.ui.NodePlayerView
+    android:id="@+id/pvParticipantC"
+    android:layout_width="0dp"
+    android:layout_height="0dp"
+    app:enable_debug_text_view="true"
+    app:layout_constraintBottom_toTopOf="@id/glH90"
+    app:layout_constraintEnd_toEndOf="@id/glV50"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintTop_toTopOf="@id/glH45" />
+
+  <EditText
+    android:id="@+id/etMessage"
+    android:layout_width="0dp"
+    android:layout_height="0dp"
+    android:autofillHints="message"
+    android:hint="@string/type_your_message"
+    android:inputType="textAutoComplete"
+    app:layout_constraintBottom_toBottomOf="parent"
+    app:layout_constraintEnd_toStartOf="@id/btnSendContentInfo"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintTop_toBottomOf="@id/glH90" />
+
+  <com.google.android.material.button.MaterialButton
+    android:id="@+id/btnSend"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:minWidth="0dp"
+    android:text="@string/greater"
+    app:layout_constraintBottom_toBottomOf="parent"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintTop_toBottomOf="@id/glH90" />
+
+  <Button
+    android:id="@+id/btnSendContentInfo"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginEnd="2dp"
+    android:minWidth="0dp"
+    android:text="@string/double_greater"
+    app:layout_constraintBottom_toBottomOf="parent"
+    app:layout_constraintEnd_toStartOf="@id/btnSend"
+    app:layout_constraintTop_toBottomOf="@id/glH90" />
+
+  <androidx.camera.view.PreviewView
+    android:id="@+id/pvSelf"
+    android:layout_width="0dp"
+    android:layout_height="0dp"
+    app:layout_constraintBottom_toTopOf="@id/glH90"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintStart_toStartOf="@id/glV50"
+    app:layout_constraintTop_toTopOf="@id/glH45" />
+
+  <CheckBox
+    android:id="@+id/btnAudio"
+    android:layout_width="50dp"
+    android:layout_height="50dp"
+    android:layout_marginStart="10dp"
+    android:layout_marginEnd="5dp"
+    android:layout_marginBottom="30dp"
+    android:background="@drawable/ic_mic_selector"
+    android:button="@null"
+    android:checked="true"
+    app:layout_constraintBottom_toBottomOf="@id/pvSelf"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintStart_toEndOf="@id/btnEndCall" />
+
+  <CheckBox
+    android:id="@+id/btnVideo"
+    android:layout_width="50dp"
+    android:layout_height="50dp"
+    android:layout_marginStart="10dp"
+    android:layout_marginEnd="5dp"
+    android:layout_marginBottom="20dp"
+    android:background="@drawable/ic_camera_selector"
+    android:button="@null"
+    android:checked="true"
+    app:layout_constraintBottom_toTopOf="@id/btnAudio"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintStart_toEndOf="@+id/btnEndCall" />
+
+  <CheckBox
+    android:id="@+id/btnFlipCam"
+    android:layout_width="50dp"
+    android:layout_height="50dp"
+    android:layout_marginStart="10dp"
+    android:layout_marginEnd="5dp"
+    android:layout_marginBottom="20dp"
+    android:background="@drawable/ic_flip_cam_selector"
+    android:button="@null"
+    android:checked="true"
+    app:layout_constraintBottom_toTopOf="@id/btnVideo"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintStart_toEndOf="@id/btnEndCall" />
+
+  <androidx.constraintlayout.widget.Guideline
+    android:id="@+id/glH45"
+    android:layout_width="0dp"
+    android:layout_height="match_parent"
+    android:orientation="horizontal"
+    app:layout_constraintGuide_percent="0.45" />
+
+  <androidx.constraintlayout.widget.Guideline
+    android:id="@+id/glH90"
+    android:layout_width="0dp"
+    android:layout_height="match_parent"
+    android:orientation="horizontal"
+    app:layout_constraintGuide_percent="0.9" />
+
+  <androidx.constraintlayout.widget.Guideline
+    android:id="@+id/glV50"
+    android:layout_width="0dp"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    app:layout_constraintGuide_percent="0.5" />
+
+  <Button
+    android:id="@+id/btnInvite"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="10dp"
+    android:text="@string/invite"
+    app:layout_constraintBottom_toTopOf="@id/btnEndCall"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintStart_toStartOf="parent" />
+
+  <Button
+    android:id="@+id/btnEndCall"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="20dp"
+    android:text="@string/end_call_for_all"
+    app:layout_constraintBottom_toTopOf="@id/glH90"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintStart_toStartOf="parent" />
+</androidx.constraintlayout.widget.ConstraintLayout>
