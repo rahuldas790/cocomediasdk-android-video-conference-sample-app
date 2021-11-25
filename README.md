@@ -42,7 +42,7 @@
 - Add media sdk dependency in module level build.gradle
   ```groovy
   implementation 'buzz.getcoco:cocomediasdk-java:0.0.3-lite'
-  implementation 'buzz.getcoco:cocomediasdk-android:0.0.4@aar'
+  implementation 'buzz.getcoco:cocomediasdk-android:0.0.4'
   implementation 'com.github.elear-solutions:ExoPlayer:1781b9d720'
   implementation 'androidx.camera:camera-view:1.0.0-alpha31'
   ```
