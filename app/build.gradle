@@ -35,9 +35,9 @@ android {
 }
 
 dependencies {
-  implementation 'buzz.getcoco:cocomediasdk-java:0.0.3-lite-develop'
-  implementation 'buzz.getcoco:cocomediasdk-android:0.0.2-debug@aar'
-  implementation 'com.github.krishna-elear:ExoPlayer:01d1e7fc09'
+  implementation 'buzz.getcoco:cocomediasdk-java:0.0.3-lite-debug'
+  implementation 'buzz.getcoco:cocomediasdk-android:0.0.4-debug@aar'
+  implementation 'com.github.elear-solutions:ExoPlayer:1781b9d720'
 
   implementation 'androidx.camera:camera-view:1.0.0-alpha31'
 

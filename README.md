@@ -31,15 +31,26 @@
   username value it will be used during invite user
 
 ## Setup for other android apps
+- Add jitpack dependency in root level build.gradle
+  ```groovy
+  allprojects {
+    repositories {
+      maven { url 'https://jitpack.io' }
+    }
+  }
+  ```
+- Add media sdk dependency in module level build.gradle
+  ```groovy
+  implementation 'buzz.getcoco:cocomediasdk-java:0.0.3-lite'
+  implementation 'buzz.getcoco:cocomediasdk-android:0.0.4@aar'
+  implementation 'com.github.elear-solutions:ExoPlayer:1781b9d720'
+  implementation 'androidx.camera:camera-view:1.0.0-alpha31'
+  ```
 - Add client id present in step 6 in AndroidManifest (Need not for Service Apps with custom login)
   ```xml
     <meta-data
-      android:name="buzz.getcoco.media.client_id"
+      android:name="buzz.getcoco.auth.client_id"
       android:value="<client_id>" />
-  ```
-- Add Gradle dependency
-  ```groovy
-    implementation 'buzz.getcoco:cocomediasdk-android:0.0.1'
   ```
 - Add Camera & Microphone permission in Manifest file
   ```xml
@@ -138,13 +149,13 @@
               MediaSession session = handle.joinUpon(this).build();
 
               // join and start recieving data on the underlying network
-              session.create();
+              session.start();
 
               // delete the session and underlying network
               session.delete();
 
               // disconnect from the network
-              session.destroy();
+              session.stop();
             });
           });
     }
@@ -205,7 +216,7 @@
         .setSessionId("<Session Id>")
         .build();
 
-      session.create();
+      session.start();
 
       session.getConnectionStatus().observe(this, status -> {
         // wait till session is connected, else sendMessage will fail.
@@ -226,7 +237,7 @@
 
     @Override
     protected void onDestroy() {
-      session.destroy();
+      session.stop();
     }
   }
   ```
@@ -241,21 +252,21 @@
         // triggered on receiving a new message from sourceNodeId
 
         // NOTE: This code will be executed on a background thread.
-        //       and this listener will be cleared during destroy()
+        //       and this listener will be cleared during stop()
       });
 
       session.setContentInfoReceivedListener((message, sourceNodeId, contentTime) -> {
         // triggered on receiving a new content info message from sourceNodeId
 
         // NOTE: This code will be executed on a background thread.
-        //       and this listener will be cleared during destroy()
+        //       and this listener will be cleared during stop()
       });
 
       session.setNodeStatusListener((nodeId, isOnline) -> {
         // triggered when nodeId becomes online / offline
 
         // NOTE: This code will be executed on a background thread.
-        //       and this listener will be cleared during destroy()
+        //       and this listener will be cleared during stop()
       });
     }
   }
@@ -269,7 +280,7 @@
         .setSessionId("<Session Id>")
         .build();
 
-      session.create();
+      session.start();
 
       session.getConnectionStatus().observe(this, status -> {
         // wait till session is connected, else sendMessage will fail.
@@ -332,7 +343,7 @@
 
       // binding each participant to their corresponding view
       session
-        .create()
+        .start()
         .observe(this, response -> {
 
           if (null != response.getError()) {
@@ -404,7 +415,7 @@ class CallerActivity extends AppCompatActivity {
       .addChannel(new MediaSession.ChannelBuilder("channel name", "channel metadata"))
       .build();
 
-    session.create().observe(this, container -> {
+    session.start().observe(this, container -> {
       // bind participant to the corresponding view
     });
     
@@ -450,7 +461,7 @@ class CallerActivity extends AppCompatActivity {
 
   @Override
   protected void onDestroy() {
-    session.destroy();
+    session.stop();
   }
 }
 ```
