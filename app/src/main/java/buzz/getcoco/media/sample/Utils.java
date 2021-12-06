@@ -75,6 +75,75 @@ class Utils {
   }
 
   @NonNull
+  public static LiveData<String> loginWithoutUrl() {
+    MutableLiveData<String> responseLiveData = new MutableLiveData<>();
+    String username = requireUsername();
+
+    OkHttpClient client = new OkHttpClient.Builder()
+        .connectTimeout(30, TimeUnit.SECONDS)
+        .writeTimeout(30, TimeUnit.SECONDS)
+        .readTimeout(30, TimeUnit.SECONDS)
+        .followSslRedirects(false) // to stop redirects if any
+        .followRedirects(false)
+        .build();
+
+    Request request = new Request.Builder()
+        .post(
+            RequestBody.create(
+                String.format(Locale.US, "{\"client_id\":\"%s\"," +
+                        " \"client_secret\":\"%s\"," +
+                        " \"grant_type\":\"%s\"}",
+                        "bcbf92b1065c58daaae7",
+                        "18430514a29841ec97acd79c238870c086d34d4e",
+                        "client_credentials"),
+                MediaType.parse("application/json"))
+        )
+        .url("https://api.getcoco.buzz/oauth/token")
+        .build();
+
+    Log.d(TAG, "login: sending request: " + request);
+
+    client.newCall(request).enqueue(new Callback() {
+      @Override
+      public void onFailure(@NonNull Call call, @NonNull IOException e) {
+        Log.d(TAG, "onFailure: error", e);
+        responseLiveData.postValue(null);
+      }
+
+      @Override
+      public void onResponse(@NonNull Call call, @NonNull Response response)
+          throws IOException, NullPointerException {
+
+        ResponseBody responseBody = response.body();
+
+        Log.d(TAG, "onResponse: response: " + response);
+        Log.d(TAG, "onResponse: responseBody: " + responseBody);
+
+        if (!response.isSuccessful()) {
+          int code = response.code();
+
+          Log.d(TAG, "onResponse: failed to fetch tokens, error: " + code);
+
+          responseLiveData.postValue(null);
+          return;
+        }
+
+        try {
+          Objects.requireNonNull(responseBody);
+
+          String responseStr = responseBody.string();
+          responseLiveData.postValue(responseStr);
+        } catch (IOException | NullPointerException e) {
+          responseLiveData.postValue(null);
+          throw e;
+        }
+      }
+    });
+
+    return responseLiveData;
+  }
+
+  @NonNull
   public static LiveData<String> login() {
     String username = requireUsername();
     String baseUrl = requireBaseUrl();

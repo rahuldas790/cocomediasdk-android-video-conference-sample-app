@@ -4,6 +4,11 @@
     <option name="filePathToZoomLevelMap">
       <map>
         <entry key="..\:/Users/krish/Documents/coco/cocomediasdk-android-video-conference-sample-app/app/src/main/res/layout/activity_caller.xml" value="0.25" />
+        <entry key="app/src/main/res/layout/activity_caller.xml" value="0.35104166666666664" />
+        <entry key="app/src/main/res/layout/activity_create_session.xml" value="0.35104166666666664" />
+        <entry key="app/src/main/res/layout/activity_invite_user.xml" value="0.35104166666666664" />
+        <entry key="app/src/main/res/layout/activity_splash.xml" value="0.35104166666666664" />
+        <entry key="app/src/main/res/layout/activity_view_sessions.xml" value="0.35104166666666664" />
       </map>
     </option>
   </component>

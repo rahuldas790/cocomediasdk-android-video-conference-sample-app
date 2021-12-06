@@ -3,21 +3,26 @@ package buzz.getcoco.media.sample;
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.hardware.Camera;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
+
 import androidx.annotation.RequiresPermission;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.camera.core.CameraSelector;
 import androidx.core.app.ActivityCompat;
+
 import buzz.getcoco.media.CameraStreamHandler;
 import buzz.getcoco.media.MediaSession;
 import buzz.getcoco.media.MicStreamHandler;
 import buzz.getcoco.media.Node;
 import buzz.getcoco.media.sample.databinding.ActivityCallerBinding;
 import buzz.getcoco.media.ui.NodePlayerView;
+
 import com.google.android.exoplayer2.ExoPlayer;
 import com.google.common.collect.ImmutableList;
+
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -39,364 +44,383 @@ import java.util.Objects;
  */
 public class CallerActivity extends AppCompatActivity {
 
-  public static final String SESSION_CREATE = "start";
-  public static final String SESSION_EXTRA = "session_extra";
+    public static final String SESSION_CREATE = "start";
+    public static final String SESSION_EXTRA = "session_extra";
 
-  private static final String TAG = "CallerActivity";
+    private static final String TAG = "CallerActivity";
 
-  private static final String CHANNEL_NAME = "call channel";
-  private static final String CHANNEL_METADATA = "-";
+    private static final String CHANNEL_NAME = "call channel";
+    private static final String CHANNEL_METADATA = "-";
 
-  private MediaSession session;
+    private MediaSession session;
 
-  private ArrayList<ExoPlayer> players;
-  private ImmutableList<Node> participants = ImmutableList.of();
+    private ArrayList<ExoPlayer> players;
+    private ImmutableList<Node> participants = ImmutableList.of();
 
-  private ImmutableList<NodePlayerView> playerViews;
+    private ImmutableList<NodePlayerView> playerViews;
 
-  private ActivityCallerBinding binding;
+    private ActivityCallerBinding binding;
 
-  @Override
-  protected void onCreate(Bundle savedInstanceState) {
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
 
-    super.onCreate(savedInstanceState);
+        super.onCreate(savedInstanceState);
 
-    boolean createMode = getIntent().getBooleanExtra(SESSION_CREATE, false);
-    String sessionExtra = getIntent().getStringExtra(SESSION_EXTRA);
+        boolean createMode = getIntent().getBooleanExtra(SESSION_CREATE, false);
+        String sessionExtra = getIntent().getStringExtra(SESSION_EXTRA);
 
-    Objects.requireNonNull(sessionExtra);
+        Objects.requireNonNull(sessionExtra);
 
-    binding = ActivityCallerBinding.inflate(getLayoutInflater());
+        binding = ActivityCallerBinding.inflate(getLayoutInflater());
 
-    Log.d(TAG, "onCreate: createMode: " + createMode + ", session: " + sessionExtra);
+        Log.d(TAG, "onCreate: createMode: " + createMode + ", session: " + sessionExtra);
 
-    setContentView(binding.getRoot());
+        setContentView(binding.getRoot());
 
-    if (ActivityCompat.checkSelfPermission(this,
-        Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED
-        || ActivityCompat.checkSelfPermission(this,
-        Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+        if (ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED
+                || ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
 
-      Toast.makeText(this, "grant the permissions", Toast.LENGTH_SHORT).show();
-      finish();
-      return;
-    }
-
-    if (createMode) {
-      session = new MediaSession.CreateBuilder(this)
-          .setName(sessionExtra)
-          .setMetadata(DateTimeFormatter
-              .ofPattern("dd-MM-yyyy hh:mm a")
-              .format(ZonedDateTime.now()))
-          .addChannel(new MediaSession.ChannelBuilder(CHANNEL_NAME, CHANNEL_METADATA))
-          .build();
-    } else {
-      session = new MediaSession.JoinBuilder(this)
-          .setSessionId(sessionExtra)
-          .build();
-    }
-
-    session
-        .getAuthListener()
-        .observe(this, authEndpoint -> {
-          Log.d(TAG, "onCreate: tokens expired, logging in");
-
-          Utils.login()
-              .observe(this, tokens -> {
-                Log.d(TAG, "onCreate: setting tokens: " + tokens);
-                session.setAuthTokens(tokens);
-              });
-        });
-
-    session
-        .start()
-        .observe(this, response -> {
-          Log.d(TAG, "onCreate: response: " + response);
-
-          if (null != response.getError()) {
-            Toast
-                .makeText(this, "error: " + response.getError().getMessage(), Toast.LENGTH_SHORT)
-                .show();
+            Toast.makeText(this, "grant the permissions", Toast.LENGTH_SHORT).show();
+            finish();
             return;
-          }
-
-          MediaSession.ChannelNodesContainer nodesContainer = response
-              .getValue()
-              .stream()
-              .filter(container -> container.getChannelName().equals(CHANNEL_NAME))
-              .findFirst()
-              .orElse(null);
-
-          if (null == nodesContainer) {
-            Toast.makeText(this, "channel not present", Toast.LENGTH_SHORT).show();
-            return;
-          }
-
-          this.participants = nodesContainer.getNodes();
-          updateParticipants();
-        });
-
-    Log.d(TAG, "onCreate: adding streams");
-
-    addMicStreamHandler();
-    addCameraStreamHandler(CameraSelector.DEFAULT_FRONT_CAMERA);
-
-    binding.btnFlipCam.setOnClickListener(v -> {
-      CameraSelector selector =
-          binding.btnFlipCam.isChecked()
-              ? CameraSelector.DEFAULT_FRONT_CAMERA
-              : CameraSelector.DEFAULT_BACK_CAMERA;
-
-      addCameraStreamHandler(selector);
-    });
-
-    // ends call for everyone
-    binding.btnEndCall.setOnClickListener(v -> {
-      Toast.makeText(this, "ending session", Toast.LENGTH_SHORT).show();
-
-      session
-          .delete()
-          .observe(this, response -> {
-            if (null == response.getError()) {
-              Toast.makeText(this, "session ended", Toast.LENGTH_SHORT).show();
-              finish();
-            } else {
-              Log.w(TAG, "onCreate: error", response.getError());
-              Toast.makeText(this, "failed to end session", Toast.LENGTH_SHORT).show();
-            }
-          });
-    });
-
-    binding.btnInvite.setOnClickListener(v -> {
-      Toast.makeText(this, "resolving id to invite", Toast.LENGTH_SHORT).show();
-      session.getHandle().observe(this, response -> {
-        Intent intent = new Intent(this, InviteUserActivity.class);
-
-        if (null != response.getError()) {
-          Toast.makeText(this, "error fetching session info", Toast.LENGTH_SHORT).show();
-          return;
         }
 
-        intent.putExtra(InviteUserActivity.SESSION_ID, response.getValue().getId());
+        if (createMode) {
+            session = new MediaSession.CreateBuilder(this)
+                    .setName(sessionExtra)
+                    .setMetadata(DateTimeFormatter
+                            .ofPattern("dd-MM-yyyy hh:mm a")
+                            .format(ZonedDateTime.now()))
+                    .addChannel(new MediaSession.ChannelBuilder(CHANNEL_NAME, CHANNEL_METADATA))
+                    .build();
+        } else {
+            session = new MediaSession.JoinBuilder(this)
+                    .setSessionId(sessionExtra)
+                    .build();
+        }
 
-        startActivity(intent);
-      });
-    });
+        session
+                .getAuthListener()
+                .observe(this, authEndpoint -> {
+                    Log.d(TAG, "onCreate: tokens expired, logging in");
 
-    binding.btnSend.setOnClickListener(v -> {
-      String message = binding.etMessage.getText().toString();
+                    Utils.login()
+                            .observe(this, tokens -> {
+                                Log.d(TAG, "onCreate: setting tokens: " + tokens);
+                                session.setAuthTokens(tokens);
+                            });
+                });
 
-      binding.etMessage.setText("");
+        session
+                .start()
+                .observe(this, response -> {
+                    Log.d(TAG, "onCreate: response: " + response);
 
-      session.sendMessage(message);
-    });
+                    if (null != response.getError()) {
+                        Toast
+                                .makeText(this, "error: " + response.getError().getMessage(), Toast.LENGTH_SHORT)
+                                .show();
+                        return;
+                    }
 
-    binding.btnSendContentInfo.setOnClickListener(v -> {
-      String message = binding.etMessage.getText().toString();
+                    MediaSession.ChannelNodesContainer nodesContainer = response
+                            .getValue()
+                            .stream()
+                            .filter(container -> container.getChannelName().equals(CHANNEL_NAME))
+                            .findFirst()
+                            .orElse(null);
 
-      binding.etMessage.setText("");
+                    if (null == nodesContainer) {
+                        Toast.makeText(this, "channel not present", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
 
-      session.sendContentInfoMessage(message, 0);
-    });
+                    this.participants = nodesContainer.getNodes();
+                    updateParticipants();
+                });
 
-    // using message listener from Network
-    session.setMessageReceivedListener((message, sourceNodeId) -> {
-      Log.d(TAG, "onCreate: message received from: " + sourceNodeId);
+        Log.d(TAG, "onCreate: adding streams");
 
-      runOnUiThread(() -> Toast.makeText(CallerActivity.this,
-          sourceNodeId + ": " + message, Toast.LENGTH_SHORT).show());
-    });
+        addMicStreamHandler();
+        if (hasCamera(true))
+            addCameraStreamHandler(CameraSelector.DEFAULT_FRONT_CAMERA);
 
-    session.setContentInfoReceivedListener((message, sourceNodeId, contentTime) -> {
-      Log.d(TAG, "onCreate: message"
-          + " sourceNodeId: " + sourceNodeId
-          + ", message: " + message
-          + ", contentTime: " + contentTime);
+        binding.btnFlipCam.setOnClickListener(v -> {
+            if (hasCamera(binding.btnFlipCam.isChecked())) {
+                CameraSelector selector =
+                        binding.btnFlipCam.isChecked()
+                                ? CameraSelector.DEFAULT_FRONT_CAMERA
+                                : CameraSelector.DEFAULT_BACK_CAMERA;
+                addCameraStreamHandler(selector);
+            }
+        });
 
-      runOnUiThread(() -> Toast.makeText(this,
-          sourceNodeId + ": " + contentTime + ": " + message, Toast.LENGTH_SHORT).show());
-    });
+        // ends call for everyone
+        binding.btnEndCall.setOnClickListener(v -> {
+            Toast.makeText(this, "ending session", Toast.LENGTH_SHORT).show();
 
-    session.setNodeStatusListener((nodeId, isOnline) -> {
-      Log.d(TAG, "onCreate: onNodeStatusChanged: nodeId: " + nodeId + ", isOnline: " + isOnline);
+            session
+                    .delete()
+                    .observe(this, response -> {
+                        if (null == response.getError()) {
+                            Toast.makeText(this, "session ended", Toast.LENGTH_SHORT).show();
+                            finish();
+                        } else {
+                            Log.w(TAG, "onCreate: error", response.getError());
+                            Toast.makeText(this, "failed to end session", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+        });
 
-      runOnUiThread(() ->
-          Toast.makeText(this,
-              "node: " + nodeId + ", isOnline: " + isOnline,
-              Toast.LENGTH_SHORT)
-              .show());
-    });
+        binding.btnInvite.setOnClickListener(v -> {
+            Toast.makeText(this, "resolving id to invite", Toast.LENGTH_SHORT).show();
+            session.getHandle().observe(this, response -> {
+                Intent intent = new Intent(this, InviteUserActivity.class);
 
-    session.getConnectionStatus().observe(this, state -> {
-      Log.d(TAG, "onCreate: status: " + state);
-      Toast.makeText(this, "status: " + state, Toast.LENGTH_SHORT).show();
-    });
+                if (null != response.getError()) {
+                    Toast.makeText(this, "error fetching session info", Toast.LENGTH_SHORT).show();
+                    return;
+                }
 
-    playerViews = ImmutableList.of(
-        binding.pvParticipantA,
-        binding.pvParticipantB,
-        binding.pvParticipantC
-    );
-  }
+                intent.putExtra(InviteUserActivity.SESSION_ID, response.getValue().getId());
 
-  @Override
-  protected void onStart() {
-    super.onStart();
+                startActivity(intent);
+            });
+        });
 
-    for (int i = 0; i < playerViews.size(); i++) {
-      NodePlayerView pv = playerViews.get(i);
-      pv.onResume();
+        binding.btnSend.setOnClickListener(v -> {
+            String message = binding.etMessage.getText().toString();
+
+            binding.etMessage.setText("");
+
+            session.sendMessage(message);
+        });
+
+        binding.btnSendContentInfo.setOnClickListener(v -> {
+            String message = binding.etMessage.getText().toString();
+
+            binding.etMessage.setText("");
+
+            session.sendContentInfoMessage(message, 0);
+        });
+
+        // using message listener from Network
+        session.setMessageReceivedListener((message, sourceNodeId) -> {
+            Log.d(TAG, "onCreate: message received from: " + sourceNodeId);
+
+            runOnUiThread(() -> Toast.makeText(CallerActivity.this,
+                    sourceNodeId + ": " + message, Toast.LENGTH_SHORT).show());
+        });
+
+        session.setContentInfoReceivedListener((message, sourceNodeId, contentTime) -> {
+            Log.d(TAG, "onCreate: message"
+                    + " sourceNodeId: " + sourceNodeId
+                    + ", message: " + message
+                    + ", contentTime: " + contentTime);
+
+            runOnUiThread(() -> Toast.makeText(this,
+                    sourceNodeId + ": " + contentTime + ": " + message, Toast.LENGTH_SHORT).show());
+        });
+
+        session.setNodeStatusListener((nodeId, isOnline) -> {
+            Log.d(TAG, "onCreate: onNodeStatusChanged: nodeId: " + nodeId + ", isOnline: " + isOnline);
+
+            runOnUiThread(() ->
+                    Toast.makeText(this,
+                            "node: " + nodeId + ", isOnline: " + isOnline,
+                            Toast.LENGTH_SHORT)
+                            .show());
+        });
+
+        session.getConnectionStatus().observe(this, state -> {
+            Log.d(TAG, "onCreate: status: " + state);
+            Toast.makeText(this, "status: " + state, Toast.LENGTH_SHORT).show();
+        });
+
+        playerViews = ImmutableList.of(
+                binding.pvParticipantA,
+                binding.pvParticipantB,
+                binding.pvParticipantC
+        );
     }
 
-    players = new ArrayList<>();
-  }
+    @Override
+    protected void onStart() {
+        super.onStart();
 
-  @Override
-  protected void onResume() {
-    super.onResume();
-    updateParticipants();
-  }
+        for (int i = 0; i < playerViews.size(); i++) {
+            NodePlayerView pv = playerViews.get(i);
+            pv.onResume();
+        }
 
-  @Override
-  protected void onStop() {
-    super.onStop();
-
-    for (int i = 0; i < playerViews.size(); i++) {
-      NodePlayerView pv = playerViews.get(i);
-      pv.onPause();
-      pv.setPlayer(null);
+        players = new ArrayList<>();
     }
 
-    for (ExoPlayer player : players) {
-      player.release();
+    @Override
+    protected void onResume() {
+        super.onResume();
+        updateParticipants();
     }
 
-    players = null;
-  }
+    @Override
+    protected void onStop() {
+        super.onStop();
 
-  private void updateParticipants() {
-    ImmutableList<Node> participants = this.participants;
-    int participantsSize = participants.size();
+        for (int i = 0; i < playerViews.size(); i++) {
+            NodePlayerView pv = playerViews.get(i);
+            pv.onPause();
+            pv.setPlayer(null);
+        }
 
-    Log.d(TAG, "updateParticipants: nodes: " + participants);
+        for (ExoPlayer player : players) {
+            player.release();
+        }
 
-    if (participants.size() > playerViews.size()) {
-      // for sake of simplicity.
-      // Better with a recycler view ?
-
-      Log.d(TAG, "updateParticipants: chopping nodes "
-          + "from: " + participants.size()
-          + ", to: " + playerViews.size());
-
-      participants = participants.subList(0, playerViews.size());
+        players = null;
     }
 
-    for (int i = 0; i < participantsSize; i++) {
-      NodePlayerView pv = playerViews.get(i);
+    private void updateParticipants() {
+        ImmutableList<Node> participants = this.participants;
+        int participantsSize = participants.size();
 
-      if (null == pv.getPlayer()) {
-        ExoPlayer player = MediaSession.getLowLatencyPlayer(this);
+        Log.d(TAG, "updateParticipants: nodes: " + participants);
 
-        players.add(player);
-        pv.setPlayer(player);
-      }
+        if (participants.size() > playerViews.size()) {
+            // for sake of simplicity.
+            // Better with a recycler view ?
 
-      pv.bindToNode(participants.get(i));
-    }
+            Log.d(TAG, "updateParticipants: chopping nodes "
+                    + "from: " + participants.size()
+                    + ", to: " + playerViews.size());
 
-    for (int i = participantsSize; i < playerViews.size(); i++) {
-      ExoPlayer player;
-      NodePlayerView pv = playerViews.get(i);
+            participants = participants.subList(0, playerViews.size());
+        }
 
-      if (null != (player = pv.getPlayer())) {
-        player.release();
-      }
+        for (int i = 0; i < participantsSize; i++) {
+            NodePlayerView pv = playerViews.get(i);
 
-      pv.setPlayer(null);
-    }
-  }
+            if (null == pv.getPlayer()) {
+                ExoPlayer player = MediaSession.getLowLatencyPlayer(this);
 
-  @RequiresPermission(Manifest.permission.RECORD_AUDIO)
-  private void addMicStreamHandler() {
-
-    session
-        .addStream(new MicStreamHandler.Builder(CHANNEL_NAME))
-        .observe(this, audioHandler -> {
-
-          if (null == audioHandler) {
-            Log.w(TAG, "onCreate: unable to start the stream");
-            return;
-          }
-
-          Log.d(TAG, "onCreate: handler: " + audioHandler);
-
-          audioHandler.start();
-
-          audioHandler.bindToLifecycle(this);
-
-          binding.btnAudio.setOnClickListener(v -> {
-            boolean isEnabled = binding.btnAudio.isChecked();
-
-            Log.d(TAG, "addMicStreamHandler: enabled: " + isEnabled);
-
-            if (isEnabled) {
-              audioHandler.start();
-            } else {
-              audioHandler.stop();
+                players.add(player);
+                pv.setPlayer(player);
             }
 
-            Log.d(TAG, "addMicStreamHandler: command sent");
-          });
-        });
-  }
+            pv.bindToNode(participants.get(i));
+        }
 
-  @RequiresPermission(Manifest.permission.CAMERA)
-  private void addCameraStreamHandler(CameraSelector selector) {
+        for (int i = participantsSize; i < playerViews.size(); i++) {
+            ExoPlayer player;
+            NodePlayerView pv = playerViews.get(i);
 
-    session
-        .addStream(new CameraStreamHandler.Builder(
-            CHANNEL_NAME,
-            CameraStreamHandler.VideoQuality.SD,
-            selector))
-        .observe(this, videoHandler -> {
-
-          if (null == videoHandler) {
-            Log.w(TAG, "onCreate: unable to start the stream");
-            return;
-          }
-
-          Log.d(TAG, "onCreate: handler: " + videoHandler);
-
-          videoHandler.start();
-          videoHandler.bindToLifecycle(this, this, binding.pvSelf);
-
-          binding.btnVideo.setOnClickListener(v -> {
-            boolean isEnabled = binding.btnVideo.isChecked();
-
-            Log.d(TAG, "addCameraStreamHandler: enabled: " + isEnabled);
-
-            if (isEnabled) {
-              videoHandler.start();
-              videoHandler.bindToLifecycle(this, this, binding.pvSelf);
-            } else {
-              videoHandler.stop();
+            if (null != (player = pv.getPlayer())) {
+                player.release();
             }
 
-            Log.d(TAG, "addCameraStreamHandler: command sent");
-          });
-        });
-  }
-
-  @Override
-  protected void onDestroy() {
-    super.onDestroy();
-
-    if (null != session) {
-      session.stop();
+            pv.setPlayer(null);
+        }
     }
 
-    binding = null;
-    playerViews = null;
-    players = null;
-  }
+    @RequiresPermission(Manifest.permission.RECORD_AUDIO)
+    private void addMicStreamHandler() {
+
+        session
+                .addStream(new MicStreamHandler.Builder(CHANNEL_NAME))
+                .observe(this, audioHandler -> {
+
+                    if (null == audioHandler) {
+                        Log.w(TAG, "onCreate: unable to start the stream");
+                        return;
+                    }
+                    Log.d(TAG, "onCreate: handler: " + audioHandler);
+                    changeAudioState(audioHandler, true);
+                    binding.btnAudio.setOnClickListener(v -> {
+                        boolean isEnabled = binding.btnAudio.isChecked();
+                        Log.d(TAG, "addMicStreamHandler: enabled: " + isEnabled);
+                        changeAudioState(audioHandler, isEnabled);
+                        Log.d(TAG, "addMicStreamHandler: command sent");
+                    });
+                });
+    }
+
+    private void changeAudioState(MicStreamHandler handler, boolean enable) {
+        try {
+            if (enable) {
+                handler.start();
+                handler.bindToLifecycle(this);
+            } else {
+                handler.stop();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private boolean hasCamera(boolean isFront) {
+        int facing = isFront ? Camera.CameraInfo.CAMERA_FACING_FRONT : Camera.CameraInfo.CAMERA_FACING_BACK;
+        Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
+        int numberOfCameras = Camera.getNumberOfCameras();
+        for (int i = 0; i < numberOfCameras; i++) {
+            Camera.getCameraInfo(i, cameraInfo);
+            if (cameraInfo.facing == facing) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @RequiresPermission(Manifest.permission.CAMERA)
+    private void addCameraStreamHandler(CameraSelector selector) {
+        session
+                .addStream(new CameraStreamHandler.Builder(
+                        CHANNEL_NAME,
+                        CameraStreamHandler.VideoQuality.SD,
+                        selector))
+                .observe(this, videoHandler -> {
+
+                    if (null == videoHandler) {
+                        Log.w(TAG, "onCreate: unable to start the stream");
+                        return;
+                    }
+
+                    Log.d(TAG, "onCreate: handler: " + videoHandler);
+                    changeVideoState(videoHandler, true);
+
+                    binding.btnVideo.setOnClickListener(v -> {
+                        boolean isEnabled = binding.btnVideo.isChecked();
+
+                        Log.d(TAG, "addCameraStreamHandler: enabled: " + isEnabled);
+                        changeVideoState(videoHandler, isEnabled);
+                        Log.d(TAG, "addCameraStreamHandler: command sent");
+                    });
+                });
+    }
+
+    private void changeVideoState(CameraStreamHandler handler, boolean enable) {
+        try {
+            if (enable) {
+                handler.start();
+                handler.bindToLifecycle(this, this, binding.pvSelf);
+            } else {
+                handler.stop();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        if (null != session) {
+            session.stop();
+        }
+
+        binding = null;
+        playerViews = null;
+        players = null;
+    }
 }
