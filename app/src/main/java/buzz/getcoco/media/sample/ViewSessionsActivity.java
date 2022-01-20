@@ -87,11 +87,11 @@ public class ViewSessionsActivity extends AppCompatActivity {
           .observe(this, sessions -> {
             binding.srSessions.setRefreshing(false);
 
+
             if (null != sessions.getError()) {
               Toast.makeText(this, "error while fetching all sessions", Toast.LENGTH_SHORT).show();
               return;
             }
-
             adapter.setSessions(sessions.getValue());
           });
     });

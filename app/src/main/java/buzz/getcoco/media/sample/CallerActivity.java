@@ -1,9 +1,11 @@
 package buzz.getcoco.media.sample;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.hardware.Camera;
+import android.media.MediaRecorder;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
@@ -13,20 +15,21 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.camera.core.CameraSelector;
 import androidx.core.app.ActivityCompat;
 
+import com.google.common.collect.ImmutableList;
+
+import org.json.JSONObject;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Objects;
+
+import buzz.getcoco.exoplayer2.ExoPlayer;
 import buzz.getcoco.media.CameraStreamHandler;
 import buzz.getcoco.media.MediaSession;
 import buzz.getcoco.media.MicStreamHandler;
 import buzz.getcoco.media.Node;
 import buzz.getcoco.media.sample.databinding.ActivityCallerBinding;
 import buzz.getcoco.media.ui.NodePlayerView;
-
-import com.google.android.exoplayer2.ExoPlayer;
-import com.google.common.collect.ImmutableList;
-
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Objects;
 
 /**
  * An activity to start/join a call.
@@ -88,11 +91,20 @@ public class CallerActivity extends AppCompatActivity {
         }
 
         if (createMode) {
+            JSONObject metadata = new JSONObject();
+            try {
+                metadata.put("title", sessionExtra);
+                metadata.put("vodId", "960026");
+                metadata.put("contentType", "MOVIES");
+                metadata.put("image", "https://qqcdnpictest.mxplay.com/pic/7d49fc323cfb12a324792e69f33e95e5/en/16x9/640x360/test_pic1538129331134.jpg");
+                metadata.put("time", System.currentTimeMillis());
+                metadata.put("userId", Utils.requireUsername());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
             session = new MediaSession.CreateBuilder(this)
                     .setName(sessionExtra)
-                    .setMetadata(DateTimeFormatter
-                            .ofPattern("dd-MM-yyyy hh:mm a")
-                            .format(ZonedDateTime.now()))
+                    .setMetadata(metadata.toString())
                     .addChannel(new MediaSession.ChannelBuilder(CHANNEL_NAME, CHANNEL_METADATA))
                     .build();
         } else {
@@ -143,7 +155,8 @@ public class CallerActivity extends AppCompatActivity {
 
         Log.d(TAG, "onCreate: adding streams");
 
-        addMicStreamHandler();
+        if (isMicAvailable(this))
+            addMicStreamHandler();
         if (hasCamera(true))
             addCameraStreamHandler(CameraSelector.DEFAULT_FRONT_CAMERA);
 
@@ -321,6 +334,25 @@ public class CallerActivity extends AppCompatActivity {
 
             pv.setPlayer(null);
         }
+    }
+
+    //returns whether the microphone is available
+    private boolean isMicAvailable(Context context) {
+        MediaRecorder recorder = new MediaRecorder();
+        recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+        recorder.setOutputFormat(MediaRecorder.OutputFormat.DEFAULT);
+        recorder.setAudioEncoder(MediaRecorder.AudioEncoder.DEFAULT);
+        recorder.setOutputFile(new File(context.getCacheDir(), "MediaUtil#micAvailTestFile").getAbsolutePath());
+        boolean available = true;
+        try {
+            recorder.prepare();
+            recorder.start();
+
+        } catch (Exception exception) {
+            available = false;
+        }
+        recorder.release();
+        return available;
     }
 
     @RequiresPermission(Manifest.permission.RECORD_AUDIO)
